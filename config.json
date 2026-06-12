@@ -1,0 +1,54 @@
+{
+  "threads": {
+    "base_url": "https://graph.threads.net/v1.0",
+    "access_token_env": "THREADS_ACCESS_TOKEN",
+    "user_id_env": "THREADS_USER_ID",
+    "keyword_query_params": ["query", "q"],
+    "search_type": "RECENT",
+    "fields": ["id", "text", "username", "timestamp", "permalink", "media_type", "media_url"],
+    "max_results_per_keyword": 25
+  },
+  "schedule": {
+    "interval_minutes": 30,
+    "lookback_minutes": 45
+  },
+  "ai": {
+    "provider": "openai",
+    "model": "gpt-4.1-mini",
+    "openai_api_key_env": "OPENAI_API_KEY",
+    "gemini_api_key_env": "GEMINI_API_KEY"
+  },
+  "output": {
+    "timezone": "Asia/Seoul",
+    "draft_dir": "drafts",
+    "database_path": "data/thread_bot.sqlite3"
+  },
+  "keywords": {
+    "include_groups": [
+      ["올공", "올림픽공원", "재선거", "게이트"],
+      ["1-1", "1-2", "1-3", "1-4", "1-5", "2-1", "2-2", "2-3", "2-4", "2-5"],
+      ["1학년 1반", "1학년 2반", "1학년 3반", "1학년 4반", "1학년 5반", "2학년 1반", "2학년 2반", "2학년 3반", "2학년 4반", "2학년 5반"],
+      ["인원", "인원 부족", "상황 공유", "선수교체", "증원요청", "지원", "지원요청", "경찰"]
+    ],
+    "blacklist_groups": [
+      {
+        "name": "음모론성 키워드",
+        "keywords": ["예수회", "전사안", "딥스"]
+      },
+      {
+        "name": "개인 신상 노출",
+        "keywords": []
+      }
+    ],
+    "personal_info_patterns": [
+      "\\b01[016789]-?\\d{3,4}-?\\d{4}\\b",
+      "[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}",
+      "\\b\\d{2,3}-\\d{2,4}-\\d{4}\\b"
+    ]
+  },
+  "template": {
+    "title": "[올림픽공원 현장 공유] {time} 기준",
+    "notice": "자동화로 수집·요약한 초안입니다. 현장 상황은 빠르게 변할 수 있어 확인 후 공유합니다.",
+    "special_note": "개인 신원·신상 노출 정보는 제외했습니다. 상충 제보는 안전을 위해 인원 부족 제보를 우선 반영합니다."
+  }
+}

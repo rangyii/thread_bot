@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Threads OAuth Callback</title>
+    <style>
+      body {
+        margin: 0;
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        background: #f7f7f8;
+        color: #171717;
+      }
+      main {
+        box-sizing: border-box;
+        max-width: 760px;
+        margin: 0 auto;
+        padding: 48px 20px;
+      }
+      h1 {
+        margin: 0 0 12px;
+        font-size: 28px;
+        line-height: 1.25;
+      }
+      p {
+        margin: 0 0 18px;
+        color: #444;
+        line-height: 1.6;
+      }
+      label {
+        display: block;
+        margin: 22px 0 8px;
+        font-weight: 700;
+      }
+      textarea {
+        box-sizing: border-box;
+        width: 100%;
+        min-height: 110px;
+        padding: 12px;
+        border: 1px solid #c9c9cf;
+        border-radius: 8px;
+        background: white;
+        color: #111;
+        font: 14px/1.5 ui-monospace, SFMono-Regular, Consolas, monospace;
+        resize: vertical;
+      }
+      button {
+        margin-top: 12px;
+        padding: 10px 14px;
+        border: 0;
+        border-radius: 8px;
+        background: #111;
+        color: white;
+        font-weight: 700;
+        cursor: pointer;
+      }
+      .empty {
+        color: #9a3412;
+      }
+      .ok {
+        color: #166534;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Threads OAuth Callback</h1>
+      <p id="status">리디렉션 URL을 확인하는 중입니다.</p>
+
+      <label for="code">Authorization code</label>
+      <textarea id="code" readonly></textarea>
+      <button type="button" id="copy-code">code 복사</button>
+
+      <label for="full-url">전체 URL</label>
+      <textarea id="full-url" readonly></textarea>
+      <button type="button" id="copy-url">전체 URL 복사</button>
+    </main>
+
+    <script>
+      const params = new URLSearchParams(window.location.search);
+      const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+      const code = params.get("code") || hashParams.get("code") || "";
+      const error = params.get("error") || hashParams.get("error") || "";
+      const errorDescription = params.get("error_description") || hashParams.get("error_description") || "";
+
+      const status = document.querySelector("#status");
+      const codeBox = document.querySelector("#code");
+      const urlBox = document.querySelector("#full-url");
+      const copyCode = document.querySelector("#copy-code");
+      const copyUrl = document.querySelector("#copy-url");
+
+      codeBox.value = code;
+      urlBox.value = window.location.href;
+
+      if (code) {
+        status.textContent = "code 값을 찾았습니다. 아래 값을 복사해 토큰 교환 단계에 사용하세요.";
+        status.className = "ok";
+      } else if (error) {
+        status.textContent = `OAuth 오류: ${error} ${errorDescription}`;
+        status.className = "empty";
+      } else {
+        status.textContent = "URL에서 code 값을 찾지 못했습니다. Meta 앱의 Redirect URI가 정확히 일치하는지 확인하세요.";
+        status.className = "empty";
+      }
+
+      copyCode.addEventListener("click", async () => {
+        await navigator.clipboard.writeText(codeBox.value);
+        copyCode.textContent = "복사됨";
+      });
+
+      copyUrl.addEventListener("click", async () => {
+        await navigator.clipboard.writeText(urlBox.value);
+        copyUrl.textContent = "복사됨";
+      });
+    </script>
+  </body>
+</html>
