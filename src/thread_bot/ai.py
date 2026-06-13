@@ -12,7 +12,7 @@ def summarize_posts(config: dict, posts: list[FilteredPost], now_label: str) -> 
     if not posts:
         return build_empty_summary(config, now_label)
 
-    provider = config["ai"].get("provider", "none").lower()
+    provider = select_provider(config)
     prompt = build_prompt(config, posts, now_label)
     try:
         if provider == "openai":
@@ -22,6 +22,20 @@ def summarize_posts(config: dict, posts: list[FilteredPost], now_label: str) -> 
     except Exception as exc:
         return build_heuristic_summary(config, posts, now_label, warning=f"AI 요약 실패: {exc}")
     return build_heuristic_summary(config, posts, now_label)
+
+
+def select_provider(config: dict) -> str:
+    provider = config["ai"].get("provider", "auto").lower()
+    if provider != "auto":
+        if provider == "openai" and not os.environ.get(config["ai"]["openai_api_key_env"]):
+            if os.environ.get(config["ai"]["gemini_api_key_env"]):
+                return "gemini"
+        return provider
+    if os.environ.get(config["ai"]["openai_api_key_env"]):
+        return "openai"
+    if os.environ.get(config["ai"]["gemini_api_key_env"]):
+        return "gemini"
+    return "none"
 
 
 def build_prompt(config: dict, posts: list[FilteredPost], now_label: str) -> str:

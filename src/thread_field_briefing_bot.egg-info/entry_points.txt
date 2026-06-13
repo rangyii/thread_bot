@@ -1,0 +1,2 @@
+[console_scripts]
+thread-bot = thread_bot.cli:main

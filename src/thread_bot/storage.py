@@ -3,6 +3,7 @@ from __future__ import annotations
 import sqlite3
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import Any
 
 from .models import FilteredPost, ThreadPost
 
@@ -114,6 +115,29 @@ class Storage:
         if not row:
             raise ValueError(f"Draft not found: {draft_id}")
         return str(row[0])
+
+    def list_recent_posts(self, limit: int = 20) -> list[dict[str, Any]]:
+        cur = self.conn.execute(
+            """
+            SELECT id, username, timestamp, source_keyword, permalink, text
+            FROM posts
+            ORDER BY created_at DESC LIMIT ?
+            """,
+            (limit,),
+        )
+        rows = []
+        for row in cur.fetchall():
+            rows.append(
+                {
+                    "id": row[0],
+                    "username": row[1],
+                    "timestamp": row[2],
+                    "source_keyword": row[3],
+                    "permalink": row[4],
+                    "text": row[5],
+                }
+            )
+        return rows
 
     def mark_posted(self, draft_id: int) -> None:
         now = datetime.now(timezone.utc).isoformat()

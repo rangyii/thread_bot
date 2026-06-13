@@ -22,6 +22,15 @@ $env:THREADS_USER_ID="..."
 $env:OPENAI_API_KEY="..."
 ```
 
+Authorization code를 받은 직후에는 아래 명령으로 토큰을 교환할 수 있습니다.
+
+```powershell
+$env:THREADS_APP_ID="..."
+$env:THREADS_APP_SECRET="..."
+thread-bot --config config.json auth-url --redirect-uri "https://your-github-id.github.io/thread_bot/callback/"
+thread-bot exchange-code --code "받은_authorization_code" --redirect-uri "https://your-github-id.github.io/thread_bot/callback/"
+```
+
 Gemini를 쓰려면 `config.json`의 `ai.provider`를 `gemini`로 바꾸고 다음을 설정합니다.
 
 ```powershell
@@ -33,7 +42,23 @@ $env:GEMINI_API_KEY="..."
 한 번만 수집하고 초안을 만들기:
 
 ```powershell
-thread-bot --config config.json run-once
+thread-bot --config config.json run-once --verbose
+```
+
+최근 45분 제한 때문에 비어 보이면 임시로 범위를 넓혀 확인할 수 있습니다.
+
+```powershell
+thread-bot --config config.json run-once --verbose --lookback-minutes 1440
+```
+
+특정 검색어만 API 연결 테스트:
+
+```powershell
+thread-bot --config config.json me-test
+thread-bot --config config.json my-threads --limit 5
+thread-bot --config config.json token-debug
+thread-bot --config config.json search-test "올림픽공원"
+thread-bot --config config.json search-test "올림픽공원" --search-type TOP
 ```
 
 30분마다 계속 실행:
@@ -46,6 +71,8 @@ thread-bot --config config.json watch
 
 ```powershell
 thread-bot --config config.json list-drafts
+thread-bot --config config.json show-draft --draft-id 1
+thread-bot --config config.json recent-posts --limit 20
 ```
 
 초안을 확인한 뒤 게시:
@@ -53,6 +80,8 @@ thread-bot --config config.json list-drafts
 ```powershell
 thread-bot --config config.json publish --draft-id 1
 ```
+
+게시 API는 공식 흐름대로 `POST me/threads`로 컨테이너를 만든 뒤 `POST me/threads_publish`로 게시합니다.
 
 ## 키워드 관리
 

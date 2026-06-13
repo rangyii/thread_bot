@@ -16,6 +16,9 @@ AI 요약에는 둘 중 하나를 사용합니다.
 2. 새 앱을 생성합니다.
 3. 앱 대시보드에서 Threads API 제품 또는 Threads 관련 사용 사례를 추가합니다.
 4. 앱의 기본 설정에서 연락처 이메일, 개인정보처리방침 URL 등 필수 항목을 채웁니다.
+5. 앱을 개시 또는 라이브 상태로 전환합니다.
+
+앱 상태나 권한을 바꾼 뒤에는 기존 토큰을 계속 쓰지 말고 새 Authorization code와 새 Access Token을 발급받아야 합니다.
 
 ## 2. 권한 준비
 
@@ -24,68 +27,22 @@ AI 요약에는 둘 중 하나를 사용합니다.
 - 공개 키워드 검색
 - 내 Threads 계정으로 텍스트 게시
 
-문서와 앱 대시보드에서 다음 계열 권한을 확인합니다.
+`config.json`의 기본 요청 scope는 아래와 같습니다.
 
-- `threads_basic`
-- `threads_content_publish`
-- Threads keyword search 관련 권한 또는 기능
+```json
+["threads_basic", "threads_content_publish", "threads_keyword_search"]
+```
 
-권한명이 문서/대시보드에서 다르게 표시될 수 있으므로, 공식 문서의 Keyword Search 페이지와 앱 리뷰 화면의 권한명을 우선합니다.
+Meta 대시보드나 공식 문서에 표시되는 정확한 권한명이 다르면 `config.json`의 `threads.scopes`를 그 이름에 맞게 수정합니다.
 
-## 3. OAuth Redirect URI 설정
+## 3. GitHub Pages Redirect URI
 
 Meta 설정에서는 `localhost`, `127.0.0.1` 같은 로컬 주소가 허용되지 않을 수 있습니다.
-따라서 Redirect URI에는 외부에서 접근 가능한 **HTTPS 공개 URL**을 등록해야 합니다.
+따라서 Redirect URI에는 외부에서 접근 가능한 HTTPS 공개 URL을 등록해야 합니다.
 
-사용 가능한 방식은 아래 중 하나입니다.
-
-### 권장: 본인 도메인 사용
-
-이미 소유한 도메인이나 배포 가능한 서버가 있다면 HTTPS URL을 하나 만듭니다.
+이 프로젝트에는 GitHub Pages로 배포할 수 있는 콜백 페이지가 `callback/index.html`로 포함되어 있습니다.
 
 예시:
-
-```text
-https://your-domain.com/threads/callback
-```
-
-이 URL을 Meta 앱의 Valid OAuth Redirect URIs에 등록합니다.
-
-### 간단한 임시 방식: 터널링 HTTPS URL
-
-개발 중에는 Cloudflare Tunnel, ngrok 같은 도구로 임시 HTTPS URL을 만들 수 있습니다.
-
-예시:
-
-```text
-https://example-random-name.ngrok-free.app/callback
-```
-
-주의할 점:
-
-- 무료 터널 URL은 재시작할 때 바뀔 수 있습니다.
-- URL이 바뀌면 Meta 앱 설정의 Redirect URI도 다시 수정해야 합니다.
-- 토큰 발급이 끝난 뒤 자동화 실행 자체에는 callback 서버가 계속 필요하지 않을 수 있습니다.
-
-### 가장 간단한 방식: GitHub Pages 정적 콜백 페이지
-
-토큰 발급 과정에서 리디렉션 URL에 붙은 `code`만 확인하면 되는 단계라면, GitHub Pages가 가장 간단합니다.
-이 프로젝트에는 바로 배포할 수 있는 콜백 페이지가 `callback/index.html`로 포함되어 있습니다.
-
-예시:
-
-```text
-https://your-github-id.github.io/thread_bot/callback/
-```
-
-진행 순서:
-
-1. GitHub에 `thread_bot` 저장소를 만듭니다.
-2. 이 프로젝트 파일을 저장소에 올립니다.
-3. GitHub 저장소의 Settings > Pages로 이동합니다.
-4. Source를 Deploy from a branch로 설정합니다.
-5. Branch를 `main`, folder를 `/root`로 선택합니다.
-6. Pages 배포가 끝나면 아래 주소를 Meta Redirect URI에 등록합니다.
 
 ```text
 https://your-github-id.github.io/thread_bot/callback/
@@ -94,47 +51,89 @@ https://your-github-id.github.io/thread_bot/callback/
 주의할 점:
 
 - 저장소 이름이 다르면 URL의 `thread_bot` 부분도 바뀝니다.
-- GitHub 사용자/조직 페이지 저장소를 쓰는 경우 URL 구조가 달라질 수 있습니다.
 - Meta 앱에 등록한 Redirect URI와 실제 이동한 URL은 마지막 `/`까지 정확히 일치해야 합니다.
 - 리디렉션 후 페이지에 표시되는 `code` 값을 복사해 토큰 교환 단계에 사용합니다.
 
-## 4. 앱 모드와 테스트 사용자
+## 4. 권한 요청 URL 만들기
 
-앱이 개발 모드라면 본인 Threads 계정이 앱 역할 또는 테스트 사용자에 포함되어 있어야 합니다.
-권한 요청 화면에서 본인 계정이 접근할 수 없으면 먼저 앱 대시보드에서 역할/테스터 설정을 확인합니다.
-
-## 5. 액세스 토큰 발급
-
-Meta Graph API Explorer 또는 앱 대시보드의 토큰 도구에서 Threads 권한을 포함한 사용자 액세스 토큰을 발급합니다.
-
-개발 중에는 단기 토큰으로 먼저 연결을 확인하고, 상시 실행 전에는 장기 토큰 또는 갱신 가능한 운영 방식을 준비합니다.
-
-## 6. 사용자 ID 확인
-
-토큰 발급 후 Threads 사용자 ID를 확인합니다.
-
-일반적으로 `/me` 또는 Threads API의 사용자 조회 엔드포인트로 확인합니다.
-확인한 ID를 `THREADS_USER_ID`에 넣습니다.
-
-## 7. 로컬 환경변수 설정
-
-PowerShell 현재 창에서만 설정:
+먼저 Meta 앱 대시보드에서 App ID와 App Secret을 확인한 뒤 PowerShell에 설정합니다.
 
 ```powershell
-$env:THREADS_ACCESS_TOKEN="발급받은_토큰"
-$env:THREADS_USER_ID="Threads_사용자_ID"
-$env:OPENAI_API_KEY="OpenAI_API_Key"
+$env:THREADS_APP_ID="Meta_App_ID"
+$env:THREADS_APP_SECRET="Meta_App_Secret"
 ```
 
-Gemini를 사용할 경우:
+그 다음 이 명령으로 권한 요청 URL을 만듭니다.
 
 ```powershell
-$env:GEMINI_API_KEY="Gemini_API_Key"
+thread-bot --config config.json auth-url --redirect-uri "https://your-github-id.github.io/thread_bot/callback/"
 ```
 
-## 8. 연결 테스트
+출력된 URL을 브라우저에 붙여넣고 승인합니다.
+승인 후 GitHub Pages 콜백 페이지에 표시되는 Authorization code를 복사합니다.
 
-토큰 연결 후 한 번만 실행합니다.
+## 5. Authorization code를 Access Token으로 교환
+
+받은 `code`와 Meta에 등록한 Redirect URI를 그대로 넣어 실행합니다.
+
+```powershell
+thread-bot --config config.json exchange-code --code "받은_authorization_code" --redirect-uri "https://your-github-id.github.io/thread_bot/callback/"
+```
+
+이 명령은 내부적으로 다음 순서로 요청합니다.
+
+1. `POST /oauth/access_token`: Authorization code를 short-lived access token으로 교환
+2. `GET /access_token`: short-lived access token을 long-lived access token으로 교환
+
+성공하면 아래처럼 출력됩니다.
+
+```text
+THREADS_ACCESS_TOKEN=...
+THREADS_USER_ID=...
+EXPIRES_IN_SECONDS=...
+```
+
+출력된 값을 현재 PowerShell 세션에 다시 설정합니다.
+
+```powershell
+$env:THREADS_ACCESS_TOKEN="출력된_access_token"
+$env:THREADS_USER_ID="출력된_user_id"
+```
+
+주의할 점:
+
+- Authorization code는 짧은 시간 동안만 유효하며, 한 번 사용하면 다시 사용할 수 없습니다.
+- 앱 개시, 권한 추가, scope 변경 후에는 새 code와 새 token을 받아야 합니다.
+- `redirect-uri` 값은 Meta 앱에 등록한 Redirect URI와 정확히 같아야 합니다.
+
+## 6. 연결 테스트
+
+먼저 Threads API에서 토큰이 기본적으로 유효한지 확인합니다.
+
+```powershell
+thread-bot --config config.json me-test
+thread-bot --config config.json my-threads --limit 5
+```
+
+이 명령들이 성공하면 `threads_basic` 계열 토큰은 작동하는 것입니다.
+
+현재 토큰에 어떤 scope가 들어있는지 확인하려면 아래 명령을 실행합니다.
+
+```powershell
+thread-bot --config config.json token-debug
+```
+
+출력에서 `threads_keyword_search`가 보여야 공개 키워드 검색을 호출할 수 있습니다.
+다만 Meta `debug_token` endpoint가 Threads 앱 정보를 읽지 못하는 경우가 있을 수 있으므로, `token-debug`가 실패하고 `me-test`가 성공하면 `/me` 결과를 우선 기준으로 삼고 Keyword Search를 직접 테스트합니다.
+
+먼저 검색 API 권한을 확인합니다.
+
+```powershell
+thread-bot --config config.json search-test "올림픽공원"
+thread-bot --config config.json search-test "올림픽공원" --search-type TOP
+```
+
+성공하면 한 번만 전체 수집을 실행합니다.
 
 ```powershell
 thread-bot --config config.json run-once
@@ -144,6 +143,8 @@ thread-bot --config config.json run-once
 
 ```powershell
 thread-bot --config config.json list-drafts
+thread-bot --config config.json show-draft --draft-id 1
+thread-bot --config config.json recent-posts --limit 20
 ```
 
 내용을 확인한 뒤 게시합니다.
@@ -152,7 +153,28 @@ thread-bot --config config.json list-drafts
 thread-bot --config config.json publish --draft-id 1
 ```
 
-## 9. 30분 주기 실행
+게시 시 `Object with ID 'username' does not exist` 같은 오류가 나오면 `THREADS_USER_ID`에 username이 들어간 것입니다.
+현재 코드는 공식 문서 흐름대로 `POST me/threads`와 `POST me/threads_publish`를 사용하므로 게시에는 `THREADS_USER_ID`가 필요하지 않습니다.
+
+## 7. Keyword Search 권한 오류
+
+검색 테스트에서 아래와 같은 오류가 나오면 토큰은 있지만 공개 키워드 검색 권한이 없는 상태입니다.
+
+```text
+Application does not have permission for this action
+code: 10
+```
+
+확인할 항목:
+
+- 앱이 개시 또는 라이브 상태인지 확인합니다.
+- Threads API 제품이 앱에 추가되어 있는지 확인합니다.
+- `threads_keyword_search` 또는 Meta 대시보드에 표시되는 Keyword Search 권한이 앱에 부여되어 있는지 확인합니다.
+- 권한 변경 후 새 Authorization code와 새 Access Token을 발급합니다.
+- 앱 리뷰가 필요한 권한이라면 리뷰 승인 전까지 제한될 수 있습니다.
+- `thread-bot --config config.json token-debug` 출력에 `threads_keyword_search`가 실제로 들어있는지 확인합니다.
+
+## 8. 30분 주기 실행
 
 검증이 끝나면 다음 명령으로 계속 실행합니다.
 

@@ -3,9 +3,11 @@
     "base_url": "https://graph.threads.net/v1.0",
     "access_token_env": "THREADS_ACCESS_TOKEN",
     "user_id_env": "THREADS_USER_ID",
-    "keyword_query_params": ["query", "q"],
+    "keyword_query_params": ["q"],
     "search_type": "RECENT",
-    "fields": ["id", "text", "username", "timestamp", "permalink", "media_type", "media_url"],
+    "scopes": ["threads_basic", "threads_content_publish", "threads_keyword_search"],
+    "me_fields": ["id", "username", "name"],
+    "fields": ["id", "text", "permalink", "timestamp"],
     "max_results_per_keyword": 25
   },
   "schedule": {
@@ -13,8 +15,8 @@
     "lookback_minutes": 45
   },
   "ai": {
-    "provider": "openai",
-    "model": "gpt-4.1-mini",
+    "provider": "gemini",
+    "model": "gemini-2.0-flash",
     "openai_api_key_env": "OPENAI_API_KEY",
     "gemini_api_key_env": "GEMINI_API_KEY"
   },
